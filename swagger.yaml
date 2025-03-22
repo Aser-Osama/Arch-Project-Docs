@@ -341,7 +341,6 @@ paths:
                 properties:
                   message: { type: string }
 
-  /api/courses/cart:
     get:
       summary: View cart contents
       tags: [Course Catalog Service]

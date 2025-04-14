@@ -93,7 +93,17 @@ paths:
           description: Profile updated
 
   /api/user/subscribe/{channelId}:
-  post:  delete:
+    post:
+      tags: [User Profile Service]
+      summary: Subscribe to a channel
+      parameters:
+        - in: path
+          name: channelId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Subscribed }
+
     delete:
       tags: [User Profile Service]
       summary: Unsubscribe from a channel

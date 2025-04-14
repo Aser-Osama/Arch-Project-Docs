@@ -1,19 +1,18 @@
 openapi: 3.1.0
 info:
-  title: University Registration Microservice System
+  title: Video Platform API
   version: 1.0.0
-  description: >
-    OpenAPI documentation for a university registration system split into microservices.
+  description: RESTful API for a video sharing and streaming platform.
 
 servers:
-  - url: https://api.university.edu
+  - url: https://api.videoplatform.com
 
 paths:
   # Auth Service
-  /api/auth/login:
+  /api/auth/signup:
     post:
-      summary: Sign in with student ID and password
       tags: [Auth Service]
+      summary: Register a new user account
       requestBody:
         required: true
         content:
@@ -21,10 +20,27 @@ paths:
             schema:
               type: object
               properties:
-                student_id:
-                  type: string
-                password:
-                  type: string
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+              required: [email, password]
+      responses:
+        '201':
+          description: User created
+
+  /api/auth/login:
+    post:
+      tags: [Auth Service]
+      summary: Log in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+              required: [email, password]
       responses:
         '200':
           description: Login successful
@@ -35,157 +51,34 @@ paths:
                 properties:
                   accessToken: { type: string }
                   refreshToken: { type: string }
-                  role: { type: string }
 
   /api/auth/logout:
     post:
-      summary: Sign out manually or automatically
       tags: [Auth Service]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                accessToken: { type: string }
+      summary: Log out and invalidate session
       responses:
         '200':
-          description: Logged out successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
+          description: Logout successful
 
-  /api/auth/refresh-session:
-    post:
-      summary: Extend session using refresh token
-      tags: [Auth Service]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                refreshToken: { type: string }
-      responses:
-        '200':
-          description: Session extended
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  accessToken: { type: string }
-                  expiresIn: { type: integer }
-
-  # Application Service
-  /api/application/undergraduate:
-    post:
-      summary: Submit undergraduate application
-      tags: [Application Service]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name: { type: string }
-                dob: { type: string }
-                program: { type: string }
-                documents:
-                  type: array
-                  items: { type: string }
-      responses:
-        '201':
-          description: Application submitted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  applicationId: { type: string }
-                  status: { type: string }
-
-  /api/application/postgraduate:
-    post:
-      summary: Submit postgraduate application
-      tags: [Application Service]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name: { type: string }
-                dob: { type: string }
-                program: { type: string }
-                documents:
-                  type: array
-                  items: { type: string }
-      responses:
-        '201':
-          description: Application submitted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  applicationId: { type: string }
-                  status: { type: string }
-
-  # Portal Service
-  /api/portal/overview:
+  # User Profile Service
+  /api/user/profile:
     get:
-      summary: Get daily overview and calendar
-      tags: [Portal Service]
+      tags: [User Profile Service]
+      summary: Get the current user's profile
       responses:
         '200':
-          description: Overview data
+          description: Profile data returned
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  events:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        title: { type: string }
-                        time: { type: string }
+                  username: { type: string }
+                  email: { type: string }
 
-  /api/portal/plan:
-    get:
-      summary: View academic plan
-      tags: [Portal Service]
-      responses:
-        '200':
-          description: Academic plan details
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  plan:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        semester: { type: string }
-                        courses:
-                          type: array
-                          items: { type: string }
-
-  /api/portal/plan/simulate:
-    post:
-      summary: Simulate registration plan
-      tags: [Portal Service]
+    put:
+      tags: [User Profile Service]
+      summary: Update user profile
       requestBody:
         required: true
         content:
@@ -193,362 +86,71 @@ paths:
             schema:
               type: object
               properties:
-                courses:
-                  type: array
-                  items: { type: string }
+                username: { type: string }
+                bio: { type: string }
       responses:
         '200':
-          description: Simulation result
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  issues:
-                    type: array
-                    items: { type: string }
-                  feasibility: { type: boolean }
+          description: Profile updated
 
-  # Grades Service
-  /api/grades/transcript:
-    get:
-      summary: View unofficial transcript
-      tags: [Grades Service]
-      responses:
-        '200':
-          description: Transcript fetched
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  transcript:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        course: { type: string }
-                        grade: { type: string }
-
-  /api/grades/report/{semesterId}:
-    get:
-      summary: View grade report by semester
-      tags: [Grades Service]
+  /api/user/subscribe/{channelId}:
+    post:
+      tags: [User Profile Service]
+      summary: Subscribe to a channel
       parameters:
-        - name: semesterId
-          in: path
+        - in: path
+          name: channelId
           required: true
           schema: { type: string }
       responses:
-        '200':
-          description: Semester grades
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  grades:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        course: { type: string }
-                        grade: { type: string }
+        '200': { description: Subscribed }
 
-  /api/grades/attendance:
-    get:
-      summary: View attendance report
-      tags: [Grades Service]
-      responses:
-        '200':
-          description: Attendance report
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  attendance:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        course: { type: string }
-                        attendance: { type: string }
-
-  # Course Catalog Service
-  /api/courses:
-    get:
-      summary: View or search courses
-      tags: [Course Catalog Service]
-      responses:
-        '200':
-          description: Course list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  courses:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id: { type: string }
-                        title: { type: string }
-                        schedule: { type: string }
-
-  /api/courses/{id}:
-    get:
-      summary: Get course details
-      tags: [Course Catalog Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Course details
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id: { type: string }
-                  title: { type: string }
-                  description: { type: string }
-                  schedule: { type: string }
-
-  /api/courses/cart:
-    post:
-      summary: Add course to cart
-      tags: [Course Catalog Service]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                courseId: { type: string }
-      responses:
-        '200':
-          description: Added to cart
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-    get:
-      summary: View cart contents
-      tags: [Course Catalog Service]
-      responses:
-        '200':
-          description: Cart contents
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  cart:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        courseId: { type: string }
-                        title: { type: string }
-
-  /api/courses/registered:
-    get:
-      summary: View registered courses
-      tags: [Course Catalog Service]
-      responses:
-        '200':
-          description: Registered courses
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  registered:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        courseId: { type: string }
-                        title: { type: string }
-
-  /api/courses/waitlisted:
-    get:
-      summary: View waitlisted courses
-      tags: [Course Catalog Service]
-      responses:
-        '200':
-          description: Waitlisted courses
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  waitlisted:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        courseId: { type: string }
-                        title: { type: string }
-
-  # Registration Service (Asynchronous)
-  /api/registration/register:
-    post:
-      summary: Submit course registration (async)
-      tags: [Registration Service]
-      description: Registration is queued and processed asynchronously.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                courses:
-                  type: array
-                  items: { type: string }
-      responses:
-        '202':
-          description: Registration request accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  /api/registration/drop/{courseId}:
+  /api/user/subscribe/{channelId}:
     delete:
-      summary: Drop a registered course
-      tags: [Registration Service]
+      tags: [User Profile Service]
+      summary: Unsubscribe from a channel
       parameters:
-        - name: courseId
-          in: path
+        - in: path
+          name: channelId
           required: true
           schema: { type: string }
       responses:
+        '200': { description: Unsubscribed }
+
+  /api/user/subscriptions:
+    get:
+      tags: [User Profile Service]
+      summary: Get list of subscriptions
+      responses:
         '200':
-          description: Course dropped
+          description: List of channels returned
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message: { type: string }
+                type: array
+                items: { type: string }
 
-  /api/registration/simulate:
+  # Video Upload Service
+  /api/videos/upload:
     post:
-      summary: Simulate registration feasibility
-      tags: [Registration Service]
+      tags: [Video Upload Service]
+      summary: Upload a video file
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
-                courses:
-                  type: array
-                  items: { type: string }
+                file:
+                  type: string
+                  format: binary
       responses:
-        '200':
-          description: Simulation results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  issues:
-                    type: array
-                    items: { type: string }
-                  feasible: { type: boolean }
+        '201': { description: Video uploaded }
 
-  # Finance Service
-  /api/finance/balance:
-    get:
-      summary: View balance and semester fees
-      tags: [Finance Service]
-      responses:
-        '200':
-          description: Finance data
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  balance: { type: number, format: float }
-                  fees: { type: number, format: float }
-
-  /api/finance/receipts:
-    get:
-      summary: View past semester receipts
-      tags: [Finance Service]
-      responses:
-        '200':
-          description: List of receipts
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  receipts:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id: { type: string }
-                        amount: { type: number }
-                        semester: { type: string }
-
-  /api/finance/receipts/{id}/print:
-    get:
-      summary: Download or print receipt
-      tags: [Finance Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Print receipt
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  url: { type: string }
-
-  # Admin Service
-  /api/admin/dashboard:
-    get:
-      summary: Admin dashboard view
-      tags: [Admin Service]
-      responses:
-        '200':
-          description: Admin analytics
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  enrollments: { type: integer }
-                  traffic: { type: integer }
-
-  # Registrar Service
-  /api/registrar/course:
+  /api/videos/metadata:
     post:
-      summary: Add new course
-      tags: [Registrar Service]
+      tags: [Video Upload Service]
+      summary: Submit video metadata
       requestBody:
         required: true
         content:
@@ -557,261 +159,68 @@ paths:
               type: object
               properties:
                 title: { type: string }
-                schedule: { type: string }
                 description: { type: string }
-      responses:
-        '201':
-          description: Course added
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  courseId: { type: string }
-                  message: { type: string }
-
-  /api/registrar/course/{id}:
-    put:
-      summary: Modify course details
-      tags: [Registrar Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title: { type: string }
-                schedule: { type: string }
-      responses:
-        '200':
-          description: Course updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  /api/registrar/students/{id}/grades:
-    put:
-      summary: Change student grade
-      tags: [Registrar Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                courseId: { type: string }
-                newGrade: { type: string }
-      responses:
-        '200':
-          description: Grade updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  /api/registrar/course/{id}/assign:
-    put:
-      summary: Assign professors and TAs
-      tags: [Registrar Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                professors:
+                tags:
                   type: array
                   items: { type: string }
-                TAs:
-                  type: array
-                  items: { type: string }
+                visibility:
+                  type: string
+                  enum: [public, private, unlisted]
       responses:
-        '200':
-          description: Assignments saved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
+        '200': { description: Metadata saved }
 
-  /api/registrar/conflicts/{id}/approve:
-    post:
-      summary: Approve conflict resolution (async)
-      tags: [Registrar Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                note: { type: string }
-      responses:
-        '202':
-          description: Conflict approval request submitted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  /api/registrar/students/{id}/register:
-    post:
-      summary: Registrar registers course for student
-      tags: [Registrar Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                courseId: { type: string }
-      responses:
-        '200':
-          description: Course registered
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  /api/registrar/students/{id}/drop/{courseId}:
-    delete:
-      summary: Registrar drops course for student
-      tags: [Registrar Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: courseId
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Course dropped
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  # Professor Service
-  /api/professor/course/{id}/attendance:
-    post:
-      summary: Record attendance
-      tags: [Professor Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                attendance:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      studentId: { type: string }
-                      status: { type: string, enum: [present, absent] }
-      responses:
-        '200':
-          description: Attendance recorded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  /api/professor/course/{id}/grades:
-    post:
-      summary: Upload grades
-      tags: [Professor Service]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                grades:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      studentId: { type: string }
-                      grade: { type: string }
-      responses:
-        '200':
-          description: Grades uploaded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string }
-
-  /api/professor/courses:
+  /api/videos/upload/status/{uploadId}:
     get:
-      summary: View assigned courses
-      tags: [Professor Service]
+      tags: [Video Upload Service]
+      summary: Get the status of a video upload
+      parameters:
+        - in: path
+          name: uploadId
+          required: true
+          schema: { type: string }
       responses:
         '200':
-          description: Assigned courses
+          description: Upload status
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  courses:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id: { type: string }
-                        title: { type: string }
+                  status: { type: string }
 
+  # Recommendation Service
+  /api/recommendations/home:
+    get:
+      tags: [Recommendation Service]
+      summary: Get personalized homepage feed
+      responses:
+        '200':
+          description: Recommended videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    videoId: { type: string }
+                    title: { type: string }
+
+  # Video Streaming Service
+  /api/videos/stream/{videoId}:
+    get:
+      tags: [Streaming Service]
+      summary: Stream video by ID
+      parameters:
+        - in: path
+          name: videoId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Stream started
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
